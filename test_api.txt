@@ -1,6 +1,0 @@
-﻿=== GET /api/load (before) ===
-{"root":{"props":{}},"content":[]}
-=== POST /api/save ===
-{"ok":true}
-=== GET /api/load (after) ===
-{"content":[{"type":"Heading","props":{"text":"????","level":"h1"}}],"root":{"props":{}}}

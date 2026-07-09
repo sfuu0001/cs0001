@@ -1,6 +1,7 @@
 // src/puck/components/layout/Container.tsx
 // 容器布局组件：padding + backgroundColor + borderRadius + DropZone
 
+import { memo } from "react"
 import type { ComponentConfig } from "@measured/puck"
 import { DropZone } from "@measured/puck"
 
@@ -22,6 +23,19 @@ const borderRadiusMap: Record<ContainerProps["borderRadius"], string> = {
   md: "rounded-md",
   lg: "rounded-lg",
 }
+
+const ContainerRender = memo(function ContainerRender({ padding, backgroundColor, borderRadius }: ContainerProps) {
+  return (
+    <div
+      className={`${paddingMap[padding]} ${borderRadiusMap[borderRadius]}`}
+      style={{ backgroundColor: backgroundColor || "transparent" }}
+    >
+      <DropZone zone="content" />
+    </div>
+  )
+})
+
+ContainerRender.displayName = "ContainerRender"
 
 export const Container: ComponentConfig<ContainerProps> = {
   fields: {
@@ -49,12 +63,5 @@ export const Container: ComponentConfig<ContainerProps> = {
     backgroundColor: "transparent",
     borderRadius: "md",
   },
-  render: ({ padding, backgroundColor, borderRadius }: ContainerProps) => (
-    <div
-      className={`${paddingMap[padding]} ${borderRadiusMap[borderRadius]}`}
-      style={{ backgroundColor: backgroundColor || "transparent" }}
-    >
-      <DropZone zone="content" />
-    </div>
-  ),
+  render: (props: ContainerProps) => <ContainerRender {...props} />,
 }

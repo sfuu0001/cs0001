@@ -2,6 +2,7 @@
 // 媒体选择器弹窗：接收 onSelect(media) 回调，展示媒体网格，点击选择后回调并关闭弹窗。
 
 import { useCallback, useEffect, useState } from "react"
+import { toast } from "sonner"
 import { listMedia } from "@/lib/api.media"
 import type { Media } from "@/types/media"
 import { Button } from "@/components/ui/button"
@@ -27,7 +28,7 @@ export default function MediaPicker({ open, onSelect, onClose }: MediaPickerProp
       setItems(res.data)
       setTotal(res.total)
     } catch (e) {
-      window.alert(`加载失败：${(e as Error).message}`)
+      toast.error(`加载失败：${(e as Error).message}`)
     } finally {
       setLoading(false)
     }

@@ -1,7 +1,7 @@
 // src/puck/components/basic/Heading.tsx
 // 标题基础组件：text + level(h1/h2/h3)
 
-import { createElement } from "react"
+import { createElement, memo } from "react"
 import type { ComponentConfig } from "@measured/puck"
 
 export type HeadingProps = {
@@ -14,6 +14,16 @@ const sizeByLevel: Record<HeadingProps["level"], string> = {
   h2: "text-2xl",
   h3: "text-xl",
 }
+
+const HeadingRender = memo(function HeadingRender({ text, level }: HeadingProps) {
+  return createElement(
+    level,
+    { className: `font-bold text-foreground ${sizeByLevel[level]}` },
+    text
+  )
+})
+
+HeadingRender.displayName = "HeadingRender"
 
 export const Heading: ComponentConfig<HeadingProps> = {
   fields: {
@@ -28,10 +38,5 @@ export const Heading: ComponentConfig<HeadingProps> = {
     },
   },
   defaultProps: { text: "标题文字", level: "h2" },
-  render: ({ text, level }: HeadingProps) =>
-    createElement(
-      level,
-      { className: `font-bold text-foreground ${sizeByLevel[level]}` },
-      text
-    ),
+  render: (props: HeadingProps) => <HeadingRender {...props} />,
 }

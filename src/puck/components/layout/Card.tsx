@@ -1,6 +1,7 @@
 // src/puck/components/layout/Card.tsx
 // 卡片布局组件：shadcn Card + title + description + DropZone
 
+import { memo } from "react"
 import type { ComponentConfig } from "@measured/puck"
 import { DropZone } from "@measured/puck"
 import {
@@ -31,6 +32,24 @@ const shadowMap: Record<CardProps["shadow"], string> = {
   lg: "shadow-lg",
 }
 
+const CardRender = memo(function CardRender({ title, description, padding, shadow }: CardProps) {
+  return (
+    <ShadcnCard className={`${paddingMap[padding]} ${shadowMap[shadow]}`}>
+      {(title || description) && (
+        <CardHeader>
+          {title && <CardTitle>{title}</CardTitle>}
+          {description && <CardDescription>{description}</CardDescription>}
+        </CardHeader>
+      )}
+      <CardContent>
+        <DropZone zone="content" />
+      </CardContent>
+    </ShadcnCard>
+  )
+})
+
+CardRender.displayName = "CardRender"
+
 export const Card: ComponentConfig<CardProps> = {
   fields: {
     title: { type: "text" },
@@ -59,17 +78,5 @@ export const Card: ComponentConfig<CardProps> = {
     padding: "4",
     shadow: "md",
   },
-  render: ({ title, description, padding, shadow }: CardProps) => (
-    <ShadcnCard className={`${paddingMap[padding]} ${shadowMap[shadow]}`}>
-      {(title || description) && (
-        <CardHeader>
-          {title && <CardTitle>{title}</CardTitle>}
-          {description && <CardDescription>{description}</CardDescription>}
-        </CardHeader>
-      )}
-      <CardContent>
-        <DropZone zone="content" />
-      </CardContent>
-    </ShadcnCard>
-  ),
+  render: (props: CardProps) => <CardRender {...props} />,
 }

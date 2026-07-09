@@ -17,9 +17,14 @@ const ThemeImport = lazy(() => import("@/pages/admin/Themes/ImportTheme"))
 const MediaList = lazy(() => import("@/pages/admin/Media/List"))
 const TemplateList = lazy(() => import("@/pages/admin/Templates/List"))
 const TemplateCreateFromPage = lazy(() => import("@/pages/admin/Templates/CreateFromPage"))
+const Login = lazy(() => import("@/pages/Login"))
+const VersionHistory = lazy(() => import("@/pages/admin/VersionHistory"))
+const FormSubmissions = lazy(() => import("@/pages/admin/FormSubmissions"))
+const AuthGuard = lazy(() => import("@/components/AuthGuard"))
+const Onboarding = lazy(() => import("@/pages/Onboarding"))
 
 const SPINNER = (
-  <div className="flex items-center justify-center min-h-screen">
+  <div className="flex items-center justify-center min-h-screen page-enter">
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
   </div>
 )
@@ -32,25 +37,120 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
-          <Route path="/admin" element={<AdminList />} />
-          <Route path="/admin/create" element={<AdminCreate />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Login />} />
+          <Route path="/pricing" element={<Home />} />
+
+          {/* 引导流程 */}
+          <Route
+            path="/onboarding"
+            element={
+              <AuthGuard>
+                <Onboarding />
+              </AuthGuard>
+            }
+          />
+
+          {/* 受保护的管理路由 */}
+          <Route
+            path="/admin"
+            element={
+              <AuthGuard>
+                <AdminList />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/admin/create"
+            element={
+              <AuthGuard>
+                <AdminCreate />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/admin/version-history"
+            element={
+              <AuthGuard>
+                <VersionHistory />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/admin/form-submissions"
+            element={
+              <AuthGuard>
+                <FormSubmissions />
+              </AuthGuard>
+            }
+          />
+
           <Route path="/editor" element={<Editor />} />
           <Route path="/editor/:pageId" element={<Editor />} />
           <Route path="/preview" element={<Preview />} />
           <Route path="/preview/:pageId" element={<Preview />} />
 
           {/* 二期主题路由 */}
-          <Route path="/admin/themes" element={<ThemeList />} />
-          <Route path="/admin/themes/create" element={<ThemeCreateEdit />} />
-          <Route path="/admin/themes/import" element={<ThemeImport />} />
-          <Route path="/admin/themes/:id/edit" element={<ThemeCreateEdit />} />
+          <Route
+            path="/admin/themes"
+            element={
+              <AuthGuard>
+                <ThemeList />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/admin/themes/create"
+            element={
+              <AuthGuard>
+                <ThemeCreateEdit />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/admin/themes/import"
+            element={
+              <AuthGuard>
+                <ThemeImport />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/admin/themes/:id/edit"
+            element={
+              <AuthGuard>
+                <ThemeCreateEdit />
+              </AuthGuard>
+            }
+          />
 
           {/* 二期媒体路由 */}
-          <Route path="/admin/media" element={<MediaList />} />
+          <Route
+            path="/admin/media"
+            element={
+              <AuthGuard>
+                <MediaList />
+              </AuthGuard>
+            }
+          />
 
           {/* 二期模板路由 */}
-          <Route path="/admin/templates" element={<TemplateList />} />
-          <Route path="/admin/templates/create-from-page" element={<TemplateCreateFromPage />} />
+          <Route
+            path="/admin/templates"
+            element={
+              <AuthGuard>
+                <TemplateList />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/admin/templates/create-from-page"
+            element={
+              <AuthGuard>
+                <TemplateCreateFromPage />
+              </AuthGuard>
+            }
+          />
         </Routes>
       </Suspense>
     </div>

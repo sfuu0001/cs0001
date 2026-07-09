@@ -19,5 +19,10 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts"]
+  "include": [
+    "vite.config.ts",
+    "vite-plugin-component-scanner.ts",
+    "pageforge.config.ts",
+    "src/lib/component-scanner"
+  ]
 }

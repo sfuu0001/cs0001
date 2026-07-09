@@ -1,6 +1,7 @@
 // src/puck/components/layout/Row.tsx
 // 行布局组件：水平 flex 排列子组件
 
+import { memo } from "react"
 import type { ComponentConfig } from "@measured/puck"
 import { DropZone } from "@measured/puck"
 
@@ -30,6 +31,18 @@ const gapMap: Record<RowProps["gap"], string> = {
   "4": "gap-4",
   "8": "gap-8",
 }
+
+const RowRender = memo(function RowRender({ justifyContent, alignItems, gap }: RowProps) {
+  return (
+    <div
+      className={`flex flex-row ${justifyContentMap[justifyContent]} ${alignItemsMap[alignItems]} ${gapMap[gap]}`}
+    >
+      <DropZone zone="content" />
+    </div>
+  )
+})
+
+RowRender.displayName = "RowRender"
 
 export const Row: ComponentConfig<RowProps> = {
   fields: {
@@ -66,11 +79,5 @@ export const Row: ComponentConfig<RowProps> = {
     alignItems: "stretch",
     gap: "4",
   },
-  render: ({ justifyContent, alignItems, gap }: RowProps) => (
-    <div
-      className={`flex flex-row ${justifyContentMap[justifyContent]} ${alignItemsMap[alignItems]} ${gapMap[gap]}`}
-    >
-      <DropZone zone="content" />
-    </div>
-  ),
+  render: (props: RowProps) => <RowRender {...props} />,
 }

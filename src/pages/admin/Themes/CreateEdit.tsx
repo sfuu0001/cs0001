@@ -3,6 +3,7 @@
 
 import { useEffect, useState, type FormEvent } from "react"
 import { useNavigate, useParams } from "react-router-dom"
+import { toast } from "sonner"
 import { getTheme, createTheme, updateTheme } from "@/lib/api.themes"
 import type { Theme } from "@/types/theme"
 import { Button } from "@/components/ui/button"
@@ -73,7 +74,7 @@ export default function CreateEdit() {
       })
       .catch((e) => {
         if (!cancelled) {
-          window.alert(`加载主题失败：${(e as Error).message}`)
+          toast.error(`加载主题失败：${(e as Error).message}`)
           navigate("/admin/themes")
         }
       })

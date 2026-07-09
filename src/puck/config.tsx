@@ -1,5 +1,5 @@
 // src/puck/config.tsx
-// 聚合 8 个基础组件 + 22 个二期组件为 Puck Config，并导出 emptyData 空画布兜底。
+// 聚合 8 个基础组件 + 22 个二期组件 + 8 个 P0 新组件 + 自动扫描组件为 Puck Config，并导出 emptyData 空画布兜底。
 
 import type { Config, Data } from "@measured/puck"
 import "@measured/puck/puck.css"
@@ -45,8 +45,21 @@ import { Dropdown } from "./components/advanced/Dropdown"
 import { RichText } from "./components/advanced/RichText"
 import { Upload } from "./components/advanced/Upload"
 
-export const config: Config = {
-  components: {
+// ─── P0 新展示组件 (display/) ───
+import { Skeleton } from "./components/display/Skeleton"
+import { CodeBlock } from "./components/display/CodeBlock"
+import { MarkdownPreview } from "./components/display/MarkdownPreview"
+import { IframeEmbed } from "./components/display/IframeEmbed"
+import { CountUp } from "./components/display/CountUp"
+import { DataTable } from "./components/display/DataTable"
+import { EmptyState } from "./components/display/EmptyState"
+import { Stepper } from "./components/display/Stepper"
+
+import { scannedComponents } from "../.pageforge/registry"
+
+/** 构建最终组件列表：扫描组件 > 内置组件（同名覆盖） */
+function buildComponents() {
+  const builtIn: Record<string, unknown> = {
     // 一期
     Heading,
     Text,
@@ -87,7 +100,24 @@ export const config: Config = {
     Dropdown,
     RichText,
     Upload,
-  },
+
+    // P0 新展示组件
+    Skeleton,
+    CodeBlock,
+    MarkdownPreview,
+    IframeEmbed,
+    CountUp,
+    DataTable,
+    EmptyState,
+    Stepper,
+  }
+
+  // 合并扫描组件（同名覆盖内置组件）
+  return { ...builtIn, ...scannedComponents }
+}
+
+export const config: Config = {
+  components: buildComponents() as Config["components"],
 }
 
 // 空画布的初始数据

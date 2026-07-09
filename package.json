@@ -12,16 +12,20 @@
   },
   "dependencies": {
     "@measured/puck": "^0.20.1",
+    "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.11.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cors": "^2.8.5",
     "express": "^5.0.0",
+    "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.0.0",
-    "tailwind-merge": "^3.0.0"
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.0.0",
+    "ts-morph": "^28.0.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.0",

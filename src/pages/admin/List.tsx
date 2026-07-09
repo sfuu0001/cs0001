@@ -1,9 +1,11 @@
 // src/pages/admin/List.tsx
 // 管理后台列表：搜索 / 状态筛选 / 分页 + 行操作（编辑 / 预览 / 发布 / 取消发布 / 复制 / 删除 / 恢复 / 另存为模板）。
 // 三期优化：表格行抽成 PageRow + React.memo
+// 四期+：导出 JSON / 版本历史 / 表单数据
 
 import { memo, useCallback, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 import {
   listPages,
   publishPage,
@@ -13,6 +15,7 @@ import {
   restorePage,
   getPage,
   updatePage,
+  createPage,
 } from "@/lib/api"
 import type { Page, PageListParams, SeoMetadata } from "@/types/page"
 import { Button } from "@/components/ui/button"
@@ -22,6 +25,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { downloadJson } from "@/lib/export"
+import { getToken } from "@/lib/auth"
 
 const STATUS_OPTIONS = [
   { value: "", label: "全部状态" },
@@ -38,6 +44,18 @@ function formatDate(iso: string | null): string {
   return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("zh-CN")
 }
 
+/** 导出页面的完整 JSON */
+async function handleExportPage(pageId: string, title: string): Promise<void> {
+  const token = getToken()
+  const headers: Record<string, string> = { "Content-Type": "application/json" }
+  if (token) headers["Authorization"] = `Bearer ${token}`
+
+  const res = await fetch(`/api/pages/${pageId}/export?format=json`, { headers })
+  if (!res.ok) throw new Error("导出失败")
+  const body = await res.json()
+  downloadJson(body, `${title.replace(/\s+/g, "_")}_export`)
+}
+
 // ─── PageRow 子组件（带 React.memo，避免无关行重渲染） ───
 
 interface PageRowProps {
@@ -46,6 +64,7 @@ interface PageRowProps {
   onAction: (id: string, action: string) => void
   onOpenSeo: (id: string) => void
   onSaveAsTemplate: (id: string) => void
+  onExport: (id: string, title: string) => void
   navigate: (path: string) => void
 }
 
@@ -55,10 +74,11 @@ const PageRow = memo(function PageRow({
   onAction,
   onOpenSeo,
   onSaveAsTemplate,
+  onExport,
   navigate,
 }: PageRowProps) {
   return (
-    <tr key={p.id} className="border-t">
+    <tr key={p.id} className="border-t hover:bg-accent/30 border-l-2 border-l-transparent hover:border-l-primary transition-colors">
       <td className="px-3 py-2">{p.title}</td>
       <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
         {p.slug}
@@ -149,6 +169,27 @@ const PageRow = memo(function PageRow({
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => onExport(p.id, p.title)}
+              >
+                导出
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(`/admin/version-history?pageId=${p.id}`)}
+              >
+                版本历史
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(`/admin/form-submissions?pageId=${p.id}`)}
+              >
+                表单数据
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-destructive"
                 onClick={() => onAction(p.id, "delete")}
               >
@@ -163,6 +204,34 @@ const PageRow = memo(function PageRow({
 })
 
 PageRow.displayName = "PageRow"
+
+// ─── 空状态组件 ────────────────────────────────────────────────────
+
+function EmptyState({
+  isTrash,
+  onCreatePage,
+}: {
+  isTrash: boolean
+  onCreatePage: () => void
+}) {
+  return (
+    <tr>
+      <td colSpan={6} className="px-3 py-12 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <span className="text-4xl">{isTrash ? "🗑️" : "📄"}</span>
+          <p className="text-muted-foreground">
+            {isTrash ? "回收站是空的" : "还没有创建任何页面"}
+          </p>
+          {!isTrash && (
+            <Button onClick={onCreatePage} size="sm">
+              Create your first page
+            </Button>
+          )}
+        </div>
+      </td>
+    </tr>
+  )
+}
 
 // ─── 主列表组件 ───
 
@@ -199,7 +268,7 @@ export default function List() {
       setItems(res.data)
       setTotal(res.total)
     } catch (e) {
-      window.alert(`加载失败：${(e as Error).message}`)
+      toast.error(`加载失败：${(e as Error).message}`)
     } finally {
       setLoading(false)
     }
@@ -234,7 +303,7 @@ export default function List() {
         await deletePage(id)
         await fetchList()
       } catch (e) {
-        window.alert(`删除失败：${(e as Error).message}`)
+        toast.error(`删除失败：${(e as Error).message}`)
       }
       return
     }
@@ -244,7 +313,7 @@ export default function List() {
       await fn()
       await fetchList()
     } catch (e) {
-      window.alert(`${action}失败：${(e as Error).message}`)
+      toast.error(`${action}失败：${(e as Error).message}`)
     }
   }
 
@@ -253,7 +322,15 @@ export default function List() {
       await getPage(pageId)
       navigate(`/admin/templates/create-from-page?pageId=${pageId}`)
     } catch (e) {
-      window.alert(`加载页面失败：${(e as Error).message}`)
+      toast.error(`加载页面失败：${(e as Error).message}`)
+    }
+  }
+
+  const handleExport = async (pageId: string, title: string) => {
+    try {
+      await handleExportPage(pageId, title)
+    } catch (e) {
+      toast.error(`导出失败：${(e as Error).message}`)
     }
   }
 
@@ -270,7 +347,7 @@ export default function List() {
       })
       setSeoModalId(pageId)
     } catch (e) {
-      window.alert(`加载页面失败：${(e as Error).message}`)
+      toast.error(`加载页面失败：${(e as Error).message}`)
     }
   }
 
@@ -285,7 +362,7 @@ export default function List() {
       setSeoModalId(null)
       await fetchList()
     } catch (e) {
-      window.alert(`SEO 保存失败：${(e as Error).message}`)
+      toast.error(`SEO 保存失败：${(e as Error).message}`)
     } finally {
       setSeoSaving(false)
     }
@@ -299,8 +376,17 @@ export default function List() {
     setSeoValues((prev) => ({ ...prev, keywords }))
   }
 
+  const handleCreateFirstPage = async () => {
+    try {
+      const newPage = await createPage({ title: "Untitled Page" })
+      navigate(`/editor?pageId=${newPage.id}`)
+    } catch (e) {
+      toast.error(`创建页面失败：${(e as Error).message}`)
+    }
+  }
+
   return (
-    <div className="mx-auto max-w-4xl p-6">
+    <div className="mx-auto max-w-4xl p-6 page-enter">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2">
           <CardTitle>管理后台</CardTitle>
@@ -313,7 +399,7 @@ export default function List() {
           <div className="flex flex-wrap items-center gap-2">
             <input
               className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
-              placeholder="搜索标题 / 描述 / slug"
+              placeholder="搜索标题 / 描述 / slug / 内容"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
@@ -369,13 +455,17 @@ export default function List() {
                 </tr>
               </thead>
               <tbody>
-                {items.length === 0 && (
+                {items.length === 0 && !loading && (
+                  <EmptyState isTrash={view === "trash"} onCreatePage={handleCreateFirstPage} />
+                )}
+                {items.length === 0 && loading && (
                   <tr>
-                    <td
-                      colSpan={6}
-                      className="px-3 py-6 text-center text-muted-foreground"
-                    >
-                      {loading ? "加载中…" : "暂无数据"}
+                    <td colSpan={6} className="px-3 py-6 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <Skeleton className="h-4 w-48" />
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-4 w-40" />
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -388,6 +478,7 @@ export default function List() {
                     onAction={handleAction}
                     onOpenSeo={handleOpenSeo}
                     onSaveAsTemplate={handleSaveAsTemplate}
+                    onExport={handleExport}
                   />
                 ))}
               </tbody>
@@ -395,30 +486,32 @@ export default function List() {
           </div>
 
           {/* 分页 */}
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>共 {total} 条</span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                上一页
-              </Button>
-              <span>
-                {page} / {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              >
-                下一页
-              </Button>
+          {items.length > 0 && (
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>共 {total} 条</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  上一页
+                </Button>
+                <span>
+                  {page} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  下一页
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 

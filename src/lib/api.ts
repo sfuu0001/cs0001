@@ -13,6 +13,7 @@ import type {
   ContentResponse,
   ApiErrorBody,
 } from "@/types/page"
+import { getToken } from "./auth"
 
 const BASE = "/api"
 
@@ -29,11 +30,16 @@ export class ApiClientError extends Error {
 }
 
 /**
- * 底层请求封装：统一设置 JSON 头，非 2xx 抛出 ApiClientError。
+ * 底层请求封装：统一设置 JSON 头 + Authorization，非 2xx 抛出 ApiClientError。
  */
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" }
+  const token = getToken()
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
   const res = await fetch(BASE + path, {
-    headers: { "Content-Type": "application/json" },
+    headers,
     ...options,
   })
   if (!res.ok) {

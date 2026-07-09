@@ -1,5 +1,5 @@
 // server/index.js
-// Express 启动入口：挂载 pages / editor / themes / media / templates 路由。
+// Express 启动入口：挂载 pages / editor / themes / media / templates / auth / versions / submissions 路由。
 // 开发：监听 3001，代理由 Vite 处理。
 // 生产（Docker 全栈容器）：监听 PORT 环境变量（默认 3000），同时 serve 前端静态文件。
 
@@ -12,12 +12,20 @@ import editorRouter from "./routes/editor.js"
 import themeRoutes from "./routes/themes.js"
 import mediaRoutes from "./routes/media.js"
 import templateRoutes from "./routes/templates.js"
+import authRoutes from "./routes/auth.js"
+import versionsRouter from "./routes/versions.js"
+import submissionsRouter from "./routes/submissions.js"
+import { authenticateToken } from "./middleware/auth.js"
+import { rateLimit } from "./middleware/rateLimit.js"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 
 app.use(cors())
 app.use(express.json({ limit: "10mb" }))
+
+// ── 全局速率限制 ──────────────────────────────────────────────────
+app.use(rateLimit)
 
 // ── 静态文件 ────────────────────────────────────────────────────
 
@@ -28,23 +36,29 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")))
 const distPath = path.resolve(__dirname, "..", "dist")
 app.use(express.static(distPath))
 
-// ── API 路由 ────────────────────────────────────────────────────
+// ── 公开路由（无需认证） ──────────────────────────────────────────
 
 // 健康检查
 app.get("/api/hello", (_req, res) => {
   res.json({ message: "Hello from the backend! 👋" })
 })
 
-// 管理后台资源路由
-app.use("/api/pages", pagesRouter)
-// 编辑器路由（按 pageId 载入 / 保存 / 预览）
+// 认证路由（登录/注册）
+app.use("/api/auth", authRoutes)
+
+// 编辑器载入 / 预览（公开）
 app.use("/api", editorRouter)
-// 主题路由
-app.use("/api/themes", themeRoutes)
-// 媒体路由
-app.use("/api/media", mediaRoutes)
-// 模板路由
-app.use("/api/templates", templateRoutes)
+
+// ── 受保护路由（需 JWT 认证） ─────────────────────────────────────
+
+app.use("/api/pages", authenticateToken, pagesRouter)
+app.use("/api/themes", authenticateToken, themeRoutes)
+app.use("/api/media", authenticateToken, mediaRoutes)
+app.use("/api/templates", authenticateToken, templateRoutes)
+// 版本历史路由（挂载在 pages 路径下）
+app.use("/api/pages", authenticateToken, versionsRouter)
+// 表单提交路由
+app.use("/api/submissions", authenticateToken, submissionsRouter)
 
 // ── SPA 兜底 ────────────────────────────────────────────────────
 // 所有非 /api 的非文件请求 fallback 到 index.html（支持 React Router 客户端路由）

@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 import { listThemes, deleteTheme, exportTheme } from "@/lib/api.themes"
 import type { Theme } from "@/types/theme"
 import { Button } from "@/components/ui/button"
@@ -30,7 +31,7 @@ export default function ThemeList() {
       setItems(res.data)
       setTotal(res.total)
     } catch (e) {
-      window.alert(`加载失败：${(e as Error).message}`)
+      toast.error(`加载失败：${(e as Error).message}`)
     } finally {
       setLoading(false)
     }
@@ -46,7 +47,7 @@ export default function ThemeList() {
       await deleteTheme(id)
       await fetchList()
     } catch (e) {
-      window.alert(`删除失败：${(e as Error).message}`)
+      toast.error(`删除失败：${(e as Error).message}`)
     }
   }
 
@@ -70,14 +71,14 @@ export default function ThemeList() {
       a.click()
       URL.revokeObjectURL(url)
     } catch (e) {
-      window.alert(`导出失败：${(e as Error).message}`)
+      toast.error(`导出失败：${(e as Error).message}`)
     }
   }
 
   const totalPages = Math.max(1, Math.ceil(total / LIMIT))
 
   return (
-    <div className="mx-auto max-w-4xl p-6">
+    <div className="mx-auto max-w-4xl p-6 page-enter">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2">
           <CardTitle>主题管理</CardTitle>
@@ -103,13 +104,26 @@ export default function ThemeList() {
                 </tr>
               </thead>
               <tbody>
-                {items.length === 0 && (
+                {items.length === 0 && !loading && (
                   <tr>
-                    <td
-                      colSpan={5}
-                      className="px-3 py-6 text-center text-muted-foreground"
-                    >
-                      {loading ? "加载中…" : "暂无主题"}
+                    <td colSpan={5} className="px-3 py-12 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <span className="text-4xl">🎨</span>
+                        <p className="text-muted-foreground">No themes yet</p>
+                        <Button
+                          size="sm"
+                          onClick={() => navigate("/admin/themes/create")}
+                        >
+                          Create theme
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                {items.length === 0 && loading && (
+                  <tr>
+                    <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
+                      加载中…
                     </td>
                   </tr>
                 )}
@@ -164,30 +178,32 @@ export default function ThemeList() {
           </div>
 
           {/* 分页 */}
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>共 {total} 条</span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                上一页
-              </Button>
-              <span>
-                {page} / {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              >
-                下一页
-              </Button>
+          {items.length > 0 && (
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>共 {total} 条</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  上一页
+                </Button>
+                <span>
+                  {page} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  下一页
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

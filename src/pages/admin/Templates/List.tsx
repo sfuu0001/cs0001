@@ -3,8 +3,10 @@
 // 分类筛选 tabs。预设不可删。
 
 import { useCallback, useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
+import { toast } from "sonner"
 import { listTemplates, deleteTemplate } from "@/lib/api.templates"
+import { createPage, savePage } from "@/lib/api"
 import type { Template } from "@/types/template"
 import { Button } from "@/components/ui/button"
 import {
@@ -19,6 +21,9 @@ const CATEGORIES = ["全部", "landing", "about", "contact", "blog", "gallery"]
 
 export default function TemplateList() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const applyTemplateId = searchParams.get("apply")
+
   const [items, setItems] = useState<Template[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -36,7 +41,7 @@ export default function TemplateList() {
       setItems(res.data)
       setTotal(res.total)
     } catch (e) {
-      window.alert(`加载失败：${(e as Error).message}`)
+      toast.error(`加载失败：${(e as Error).message}`)
     } finally {
       setLoading(false)
     }
@@ -46,38 +51,44 @@ export default function TemplateList() {
     void fetchList()
   }, [fetchList])
 
+  // Auto-apply template if ?apply= was passed
+  useEffect(() => {
+    if (applyTemplateId && items.length > 0) {
+      const template = items.find((t) => t.id === applyTemplateId)
+      if (template) {
+        handleUseTemplate(template)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applyTemplateId, items])
+
   const handleDelete = async (id: string) => {
     if (!window.confirm("确认删除该模板？")) return
     try {
       await deleteTemplate(id)
       await fetchList()
     } catch (e) {
-      window.alert(`删除失败：${(e as Error).message}`)
+      toast.error(`删除失败：${(e as Error).message}`)
     }
   }
 
   const handleUseTemplate = async (template: Template) => {
-    // 使用模板 → 确认后直接创建页面（通过后端 apply 到新建页面）
     try {
-      const { createPage } = await import("@/lib/api")
-      // 先创建页面，再用模板内容填充
       const page = await createPage({
         title: template.name,
         description: template.description,
       })
-      // 保存模板内容到页面
-      const { savePage } = await import("@/lib/api")
       await savePage(page.id, template.content as any)
       navigate(`/editor?pageId=${page.id}`)
     } catch (e) {
-      window.alert(`应用模板失败：${(e as Error).message}`)
+      toast.error(`应用模板失败：${(e as Error).message}`)
     }
   }
 
   const totalPages = Math.max(1, Math.ceil(total / LIMIT))
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
+    <div className="mx-auto max-w-5xl p-6 page-enter">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2">
           <CardTitle>模板库</CardTitle>
@@ -106,7 +117,16 @@ export default function TemplateList() {
           {loading && items.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">加载中…</p>
           ) : items.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">暂无模板</p>
+            <div className="flex flex-col items-center gap-3 py-12">
+              <span className="text-4xl">📋</span>
+              <p className="text-muted-foreground">No templates yet</p>
+              <Button
+                size="sm"
+                onClick={() => navigate("/admin/templates/create-from-page")}
+              >
+                Create your first template
+              </Button>
+            </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((t) => (
@@ -157,30 +177,32 @@ export default function TemplateList() {
           )}
 
           {/* 分页 */}
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>共 {total} 条</span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                上一页
-              </Button>
-              <span>
-                {page} / {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              >
-                下一页
-              </Button>
+          {items.length > 0 && (
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>共 {total} 条</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  上一页
+                </Button>
+                <span>
+                  {page} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  下一页
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

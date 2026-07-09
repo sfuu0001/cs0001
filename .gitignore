@@ -33,3 +33,6 @@ server/uploads/
 nul
 NUL
 Nul
+
+# PageForge 组件扫描缓存
+.pageforge-cache/

@@ -5,6 +5,7 @@
 import { randomUUID } from "node:crypto"
 import { db } from "../db.js"
 import { uniqueSlug } from "../utils/slug.js"
+import { syncPageToFile } from "../services/syncService.js"
 
 // 空画布兜底（Puck Data 结构）
 export const EMPTY_DATA = { root: { props: {} }, content: [] }
@@ -70,8 +71,8 @@ export function list({ page = 1, limit = 10, status, search, deleted = false } =
   }
   if (search && typeof search === "string" && search.trim()) {
     const like = `%${search.trim()}%`
-    conditions.push("(title LIKE ? OR description LIKE ? OR slug LIKE ?)")
-    params.push(like, like, like)
+    conditions.push("(title LIKE ? OR description LIKE ? OR slug LIKE ? OR content LIKE ?)")
+    params.push(like, like, like, like)
   }
 
   const where = `WHERE ${conditions.join(" AND ")}`
@@ -150,7 +151,10 @@ export function create({
     now,
     JSON.stringify(metadata ?? {})
   )
-  return getById(id)
+  const createdPage = getById(id)
+  // 双写：SQLite 写入成功后同步到文件系统
+  syncPageToFile(createdPage)
+  return createdPage
 }
 
 /**
@@ -202,7 +206,10 @@ export function update(id, patch = {}) {
     )
     .run(...params)
   if (info.changes === 0) return undefined
-  return getById(id)
+  const updatedPage = getById(id)
+  // 双写：SQLite 写入成功后同步到文件系统
+  syncPageToFile(updatedPage)
+  return updatedPage
 }
 
 /**

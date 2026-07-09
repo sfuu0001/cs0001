@@ -1,6 +1,7 @@
 // src/puck/components/layout/Section.tsx
 // 区块布局组件：backgroundColor + padding + maxWidth + rounded + DropZone
 
+import { memo } from "react"
 import type { ComponentConfig } from "@measured/puck"
 import { DropZone } from "@measured/puck"
 
@@ -29,6 +30,24 @@ const roundedMap: Record<SectionProps["rounded"], string> = {
   sm: "rounded-sm",
   lg: "rounded-lg",
 }
+
+const SectionRender = memo(function SectionRender({
+  backgroundColor,
+  padding,
+  maxWidth,
+  rounded,
+}: SectionProps) {
+  return (
+    <section
+      className={`mx-auto ${paddingMap[padding]} ${maxWidthMap[maxWidth]} ${roundedMap[rounded]}`}
+      style={{ backgroundColor: backgroundColor || "transparent" }}
+    >
+      <DropZone zone="content" />
+    </section>
+  )
+})
+
+SectionRender.displayName = "SectionRender"
 
 export const Section: ComponentConfig<SectionProps> = {
   fields: {
@@ -65,17 +84,5 @@ export const Section: ComponentConfig<SectionProps> = {
     maxWidth: "full",
     rounded: "none",
   },
-  render: ({
-    backgroundColor,
-    padding,
-    maxWidth,
-    rounded,
-  }: SectionProps) => (
-    <section
-      className={`mx-auto ${paddingMap[padding]} ${maxWidthMap[maxWidth]} ${roundedMap[rounded]}`}
-      style={{ backgroundColor: backgroundColor || "transparent" }}
-    >
-      <DropZone zone="content" />
-    </section>
-  ),
+  render: (props: SectionProps) => <SectionRender {...props} />,
 }

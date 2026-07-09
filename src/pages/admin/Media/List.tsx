@@ -2,6 +2,7 @@
 // 媒体库：网格展示图片，支持上传、搜索、分页、删除。
 
 import { useCallback, useEffect, useRef, useState, type DragEvent } from "react"
+import { toast } from "sonner"
 import { listMedia, uploadMedia, deleteMedia } from "@/lib/api.media"
 import type { Media } from "@/types/media"
 import { Button } from "@/components/ui/button"
@@ -36,7 +37,7 @@ export default function MediaList() {
       setItems(res.data)
       setTotal(res.total)
     } catch (e) {
-      window.alert(`加载失败：${(e as Error).message}`)
+      toast.error(`加载失败：${(e as Error).message}`)
     } finally {
       setLoading(false)
     }
@@ -60,7 +61,7 @@ export default function MediaList() {
       await uploadMedia(file)
       await fetchList()
     } catch (e) {
-      window.alert(`上传失败：${(e as Error).message}`)
+      toast.error(`上传失败：${(e as Error).message}`)
     } finally {
       setUploading(false)
     }
@@ -89,7 +90,7 @@ export default function MediaList() {
       await deleteMedia(id)
       await fetchList()
     } catch (e) {
-      window.alert(`删除失败：${(e as Error).message}`)
+      toast.error(`删除失败：${(e as Error).message}`)
     }
   }
 
@@ -100,7 +101,7 @@ export default function MediaList() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
+    <div className="mx-auto max-w-5xl p-6 page-enter">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2">
           <CardTitle>媒体库</CardTitle>
@@ -153,9 +154,16 @@ export default function MediaList() {
           {loading && items.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">加载中…</p>
           ) : items.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">
-              暂无媒体文件
-            </p>
+            <div className="flex flex-col items-center gap-3 py-12">
+              <span className="text-4xl">🖼️</span>
+              <p className="text-muted-foreground">No media files yet</p>
+              <Button
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Upload your first image
+              </Button>
+            </div>
           ) : (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {items.map((m) => (
@@ -189,30 +197,32 @@ export default function MediaList() {
           )}
 
           {/* 分页 */}
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>共 {total} 条</span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                上一页
-              </Button>
-              <span>
-                {page} / {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              >
-                下一页
-              </Button>
+          {items.length > 0 && (
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>共 {total} 条</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  上一页
+                </Button>
+                <span>
+                  {page} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  下一页
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

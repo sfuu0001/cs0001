@@ -1,6 +1,7 @@
 // src/puck/components/layout/Grid.tsx
 // 网格布局组件：CSS Grid 排列子组件
 
+import { memo } from "react"
 import type { ComponentConfig } from "@measured/puck"
 import { DropZone } from "@measured/puck"
 
@@ -22,6 +23,18 @@ const gapMap: Record<GridProps["gap"], string> = {
   "4": "gap-4",
   "8": "gap-8",
 }
+
+const GridRender = memo(function GridRender({ columns, gap }: GridProps) {
+  return (
+    <div
+      className={`grid ${columnsMap[columns]} ${gapMap[gap]}`}
+    >
+      <DropZone zone="content" />
+    </div>
+  )
+})
+
+GridRender.displayName = "GridRender"
 
 export const Grid: ComponentConfig<GridProps> = {
   fields: {
@@ -48,11 +61,5 @@ export const Grid: ComponentConfig<GridProps> = {
     columns: "2",
     gap: "4",
   },
-  render: ({ columns, gap }: GridProps) => (
-    <div
-      className={`grid ${columnsMap[columns]} ${gapMap[gap]}`}
-    >
-      <DropZone zone="content" />
-    </div>
-  ),
+  render: (props: GridProps) => <GridRender {...props} />,
 }

@@ -115,6 +115,43 @@ db.exec(`
   );
 `)
 
+// users 表 —— JWT 用户认证
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id            TEXT PRIMARY KEY,
+    username      TEXT UNIQUE NOT NULL,
+    email         TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role          TEXT NOT NULL DEFAULT 'user',
+    created_at    TEXT
+  );
+`)
+
+// page_versions 表 —— 页面版本历史
+db.exec(`
+  CREATE TABLE IF NOT EXISTS page_versions (
+    id         TEXT PRIMARY KEY,
+    page_id    TEXT NOT NULL,
+    content    TEXT,
+    version    INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT,
+    created_by TEXT,
+    FOREIGN KEY (page_id) REFERENCES pages(id)
+  );
+`)
+
+// form_submissions 表 —— 表单数据收集
+db.exec(`
+  CREATE TABLE IF NOT EXISTS form_submissions (
+    id          TEXT PRIMARY KEY,
+    page_id     TEXT NOT NULL,
+    form_config TEXT,
+    data        TEXT,
+    created_at  TEXT,
+    ip          TEXT
+  );
+`)
+
 // ── 预设种子数据 ──────────────────────────────────────────────────────────
 // 启动时检查 themes 表是否为空，若为空则 INSERT 5 个预设主题。
 // 同样检查 templates 表，若为空则 INSERT 5 个预设模板。

@@ -1,6 +1,7 @@
 // src/puck/components/layout/Column.tsx
 // 列布局组件：垂直 flex 排列子组件
 
+import { memo } from "react"
 import type { ComponentConfig } from "@measured/puck"
 import { DropZone } from "@measured/puck"
 
@@ -25,6 +26,18 @@ const gapMap: Record<ColumnProps["gap"], string> = {
   "4": "gap-4",
   "8": "gap-8",
 }
+
+const ColumnRender = memo(function ColumnRender({ width, gap }: ColumnProps) {
+  return (
+    <div
+      className={`flex flex-col ${widthMap[width]} ${gapMap[gap]}`}
+    >
+      <DropZone zone="content" />
+    </div>
+  )
+})
+
+ColumnRender.displayName = "ColumnRender"
 
 export const Column: ComponentConfig<ColumnProps> = {
   fields: {
@@ -54,11 +67,5 @@ export const Column: ComponentConfig<ColumnProps> = {
     width: "12",
     gap: "4",
   },
-  render: ({ width, gap }: ColumnProps) => (
-    <div
-      className={`flex flex-col ${widthMap[width]} ${gapMap[gap]}`}
-    >
-      <DropZone zone="content" />
-    </div>
-  ),
+  render: (props: ColumnProps) => <ColumnRender {...props} />,
 }

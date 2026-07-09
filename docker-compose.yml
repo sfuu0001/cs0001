@@ -1,0 +1,76 @@
+# =============================================================================
+# docker-compose.yml — 三期「发布部署」容器编排
+# 三项服务：app（全栈 Node）+ nginx（反向代理/SSL）+ redis（占位）
+# =============================================================================
+
+version: "3.9"
+
+services:
+  # ---- 全栈应用（前端静态 + 后端 API） ----
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: page-editor
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-3000}
+      - DATABASE_PATH=${DATABASE_PATH:-/app/data/database.db}
+      - UPLOAD_DIR=${UPLOAD_DIR:-/app/data/uploads}
+      - SESSION_SECRET=${SESSION_SECRET:-change-me-in-production}
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - SITE_NAME=${SITE_NAME:-Page Editor}
+      - SITE_URL=${SITE_URL:-http://localhost}
+    volumes:
+      - app-data:/app/data
+      - app-uploads:/app/data/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/hello', (r) => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - editor-network
+
+  # ---- Nginx 反向代理 / SSL 终端 ----
+  nginx:
+    image: nginx:alpine
+    container_name: page-editor-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - editor-network
+
+  # ---- Redis（占位 — 后续期启用） ----
+  redis:
+    image: redis:7-alpine
+    container_name: page-editor-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - editor-network
+
+volumes:
+  app-data:
+  app-uploads:
+  redis-data:
+
+networks:
+  editor-network:
+    driver: bridge

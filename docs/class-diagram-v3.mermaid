@@ -1,0 +1,80 @@
+classDiagram
+    class Page {
+        +string id
+        +string title
+        +string slug
+        +string description
+        +Data content
+        +string status
+        +int viewCount
+        +string createdAt
+        +string updatedAt
+        +string publishedAt
+        +string deletedAt
+        +Metadata metadata
+    }
+
+    class Metadata {
+        +string themeId
+        +SeoMetadata seo
+    }
+
+    class SeoMetadata {
+        +string title
+        +string description
+        +string keywords
+        +string ogImage
+    }
+
+    class StaticHtmlRenderer {
+        +render(data: Data, seo: SeoMetadata, themeCss?: string) string
+        -escapeHtml(text: string) string
+        -renderComponent(item: ContentItem) string
+        -COMPONENT_MAP: object
+    }
+
+    class ExportApi {
+        +GET /api/pages/:id/export?format=html Response
+    }
+
+    class PageRepository {
+        +list() Page[]
+        +getById(id) Page
+        +create(data) Page
+        +update(id, patch) Page
+        +softDelete(id) bool
+    }
+
+    class DockerConfig {
+        +Dockerfile
+        +docker-compose.yml
+        +nginx/nginx.conf
+        +.env.example
+    }
+
+    class CICDConfig {
+        +.github/workflows/deploy.yml
+    }
+
+    class LazyRoutes {
+        +React.lazy(List)
+        +React.lazy(Create)
+        +React.lazy(ThemeList)
+        +React.lazy(ThemeCreateEdit)
+        +React.lazy(MediaList)
+        +React.lazy(TemplateList)
+    }
+
+    class ChunkConfig {
+        +vite.config.ts manualChunks
+        +vendor chunk
+        +puck chunk
+    }
+
+    Page "1" --> "1" Metadata : contains
+    Metadata "1" --> "0..1" SeoMetadata : seo
+    StaticHtmlRenderer ..> Page : reads content + metadata.seo
+    ExportApi ..> StaticHtmlRenderer : calls render()
+    ExportApi ..> PageRepository : getById
+    DockerConfig ..> CICDConfig : used by
+    LazyRoutes ..> ChunkConfig : enabled by

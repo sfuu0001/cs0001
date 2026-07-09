@@ -1,0 +1,63 @@
+sequenceDiagram
+    actor U as 用户
+    participant E as Editor.tsx
+    participant API as 后端 API
+    participant Repo as PageRepository
+    participant Render as renderStaticHtml.js
+
+    Note over U,Render: 链路 A：发布 → 静态 HTML 导出
+
+    U->>E: 点击「发布」
+    E->>API: POST /api/pages/:id/publish
+    API->>Repo: update(id, {status:"published", publishedAt: now})
+    Repo-->>API: page
+    API-->>E: {page}
+
+    Note over U,Render: 导出流程
+
+    U->>API: GET /api/pages/:id/export?format=html
+    API->>Repo: getById(id)
+    Repo-->>API: page (含 content + metadata.seo)
+    API->>Render: render(page.content, page.metadata.seo)
+    Render->>Render: 遍历 content 数组
+    Render->>Render: Heading→h1, Text→p, Image→img...
+    Render->>Render: escapeHtml 转义用户文本
+    Render->>Render: 注入 SEO meta 到 <head>
+    Render-->>API: 完整 HTML 字符串
+    API-->>U: 200 text/html
+
+    Note over U,Render: 链路 B：懒加载路由 + 分包
+
+    participant App as App.tsx
+    participant Net as 网络
+
+    U->>App: 导航到 /admin（List 路由）
+    App->>App: React.lazy(() => import("./pages/admin/List"))
+    App->>Net: 请求 chunk-admin-List.js (~30kB)
+    Net-->>App: 脚本执行
+    App-->>U: 渲染 List 页面
+
+    U->>App: 导航到 /editor?pageId=xxx
+    App->>Net: 请求 chunk-puck.js (~200kB) + chunk-editor.js (~50kB)
+    Net-->>App: puck chunk（首次加载后缓存）
+    App-->>U: 渲染编辑器
+
+    Note over U,Net: 链路 C：Docker 构建部署
+
+    participant GH as GitHub
+    participant CI as GitHub Actions
+    participant Reg as Docker Registry
+    participant Svr as 服务器
+
+    U->>GH: git push main
+    GH->>CI: 触发 workflow
+    CI->>CI: 1. npm ci
+    CI->>CI: 2. npm run build (tsc + vite)
+    CI->>CI: 3. npm test
+    CI->>CI: 4. docker build -t my-app .
+    CI->>Reg: docker push my-app:<sha>
+    CI->>Svr: SSH deploy 命令
+    Svr->>Svr: docker pull my-app:<sha>
+    Svr->>Svr: docker-compose up -d
+    Svr-->>CI: 部署完成
+    CI-->>GH: ✅ Success

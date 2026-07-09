@@ -1,0 +1,66 @@
+classDiagram
+    class Page {
+        +string id
+        +string title
+        +string slug
+        +string description
+        +object content   // Puck Data {root,content,zones?}
+        +"draft"|"published"|"archived" status
+        +number viewCount
+        +string createdAt   // ISO8601
+        +string updatedAt   // ISO8601
+        +string publishedAt // ISO8601 | null
+        +string deletedAt   // ISO8601 | null
+        +object metadata
+    }
+
+    class PageRow {
+        +TEXT id
+        +TEXT title
+        +TEXT slug UNIQUE
+        +TEXT description
+        +TEXT content      // JSON 文本
+        +TEXT status DEFAULT 'draft'
+        +INTEGER view_count DEFAULT 0
+        +DATETIME created_at
+        +DATETIME updated_at
+        +DATETIME published_at
+        +DATETIME deleted_at
+        +TEXT metadata      // JSON 文本
+    }
+
+    class PageRepository {
+        +list({page,limit,status,search}) PageRow[]
+        +getById(id) PageRow
+        +create(data) PageRow
+        +update(id, patch) PageRow
+        +softDelete(id) void
+        +restore(id) void
+        +duplicate(id) PageRow
+        +findBySlug(slug) PageRow
+        +incrementView(id) void
+    }
+
+    class PagesApi {
+        +GET /api/pages
+        +POST /api/pages
+        +GET /api/pages/:id
+        +PUT /api/pages/:id
+        +DELETE /api/pages/:id
+        +POST /api/pages/:id/publish
+        +POST /api/pages/:id/unpublish
+        +POST /api/pages/:id/duplicate
+        +GET /api/pages/:id/export
+    }
+
+    class EditorApi {
+        +GET /api/load/:pageId
+        +POST /api/save/:pageId
+        +GET /api/preview/:pageId
+    }
+
+    PagesApi --> Page : 读写资源
+    EditorApi --> Page : 读写内容
+    PageRepository ..> PageRow : 持久化(snake_case)
+    PagesApi ..> PageRepository : 调用
+    EditorApi ..> PageRepository : 调用

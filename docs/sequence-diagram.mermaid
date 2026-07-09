@@ -1,0 +1,66 @@
+%% 链路 A：创建页面 → 编辑器编辑 → 保存 → 发布 → 预览
+sequenceDiagram
+    actor U as 用户
+    participant C as Admin/Create.tsx
+    participant L as Admin/List.tsx
+    participant E as Editor.tsx
+    participant API as 后端 API
+    participant DB as SQLite(pages)
+    participant P as Preview.tsx
+
+    U->>C: 填写标题/描述，提交创建
+    C->>API: POST /api/pages {title, slug?, description?}
+    API->>DB: INSERT page(status='draft', slug 唯一化)
+    DB-->>API: 返回新 page(id)
+    API-->>C: {page}
+    C->>L: 跳转/刷新列表
+
+    U->>L: 点击"编辑" → 带 pageId
+    L->>E: 路由 /editor?pageId=ID
+    E->>API: GET /api/load/ID
+    API->>DB: SELECT content WHERE id=ID AND deleted_at IS NULL
+    DB-->>API: page.content (Puck Data)
+    API-->>E: {content: Data}
+    E->>E: Puck 编辑器渲染并编辑
+
+    U->>E: 点击"保存"
+    E->>API: POST /api/save/ID {content: Data}
+    API->>DB: UPDATE pages SET content=?, updated_at=NOW WHERE id=ID
+    DB-->>API: OK
+    API-->>E: {ok: true}
+
+    U->>E: 点击"发布"
+    E->>API: POST /api/pages/ID/publish
+    API->>DB: 校验 content 非空 → UPDATE status='published', published_at=NOW
+    DB-->>API: page
+    API-->>E: {page}
+
+    U->>P: 打开 /preview?pageId=ID
+    P->>API: GET /api/preview/ID
+    API->>DB: SELECT content + UPDATE view_count = view_count + 1
+    DB-->>API: page.content
+    API-->>P: {content: Data}
+    P->>P: Render 渲染只读预览
+
+%% 链路 B：管理后台列表加载
+sequenceDiagram
+    actor U as 用户
+    participant L as Admin/List.tsx
+    participant API as 后端 API
+    participant R as PageRepository
+    participant DB as SQLite(pages)
+
+    U->>L: 进入管理后台
+    L->>API: GET /api/pages?page=1&limit=10&status=&search=
+    API->>R: list({page, limit, status, search})
+    R->>DB: SELECT WHERE deleted_at IS NULL [AND status=?] [AND title LIKE ?] ORDER BY updated_at DESC LIMIT ? OFFSET ?
+    R->>DB: SELECT COUNT(*) WHERE deleted_at IS NULL [...]
+    DB-->>R: rows + total
+    R-->>API: {rows, total}
+    API-->>L: {data: rows, total, page, limit}
+    L->>L: 渲染表格 + 分页 + 筛选 + 搜索
+
+    U->>L: 翻页 / 搜索 / 筛选
+    L->>API: GET /api/pages?page=2&search=xxx
+    API-->>L: {data, total, page, limit}
+    L->>L: 更新视图

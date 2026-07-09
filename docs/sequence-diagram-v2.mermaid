@@ -1,0 +1,105 @@
+%% 链路 A：编辑器中选择主题 → 实时切换 CSS 变量
+sequenceDiagram
+    actor U as 用户
+    participant E as Editor.tsx
+    participant TI as ThemeInjector
+    participant API as 后端 API
+    participant DB as SQLite(themes)
+
+    U->>E: 在编辑器顶部点击"主题选择"
+    E->>API: GET /api/themes?limit=50
+    API->>DB: SELECT * FROM themes
+    DB-->>API: themes[]
+    API-->>E: {data: themes}
+    E->>E: 显示主题选择下拉/卡片列表
+
+    U->>E: 选择一个主题（如"暗色模式"）
+    E->>API: GET /api/themes/:id
+    API->>DB: SELECT * FROM themes WHERE id=?
+    DB-->>API: theme{variables: {...}}
+    API-->>E: {theme}
+    E->>TI: injectTheme(theme.variables)
+    TI->>TI: document.documentElement.style.setProperty(key, value) × N
+    TI-->>E: 完成注入
+    E->>E: 页面实时切换主题样式
+
+    U->>E: 点击"保存主题关联"
+    E->>API: PUT /api/pages/:id {metadata: {themeId: theme.id}}
+    API->>DB: UPDATE pages SET theme_id=? WHERE id=?
+    DB-->>API: OK
+    API-->>E: {page}
+
+%% 链路 B：媒体上传 → 在 Puck 组件中选择媒体
+sequenceDiagram
+    actor U as 用户
+    participant MP as MediaPicker.tsx
+    participant ML as Admin/Media/List.tsx
+    participant API as 后端 API
+    participant MUL as multer
+    participant FS as server/uploads/
+    participant DB as SQLite(media)
+
+    U->>ML: 进入媒体库
+    ML->>API: GET /api/media?page=1&limit=20
+    API->>DB: SELECT * FROM media ORDER BY created_at DESC
+    DB-->>API: media[]
+    API-->>ML: {data: media}
+    ML->>ML: 网格缩略图展示
+
+    U->>ML: 点击"上传"按钮
+    ML->>ML: 弹出文件选择对话框
+    U->>ML: 选择文件（图片）
+    ML->>API: POST /api/media (FormData: file)
+    API->>MUL: multer.single("file")
+    MUL->>FS: 写入 server/uploads/<uuid>.ext
+    FS-->>MUL: 成功
+    API->>DB: INSERT INTO media (id, filename, original_name, ...)
+    DB-->>API: media 记录
+    API-->>ML: {media}
+    ML->>ML: 新增媒体出现在网格中
+
+    Note over U,MP: 在编辑器组件中选择媒体
+    U->>MP: 在编辑器 Image 组件中点击"选择媒体"
+    MP->>API: GET /api/media?limit=50
+    API-->>MP: {data: media[]}
+    MP->>MP: 弹窗展示媒体库缩略图
+    U->>MP: 点击某张图片
+    MP-->>U: 返回 media.url 填入 Image.src
+
+%% 链路 C：保存页面为模板 → 从模板创建页面
+sequenceDiagram
+    actor U as 用户
+    participant TL as Admin/Templates/List.tsx
+    participant CF as Templates/CreateFromPage.tsx
+    participant E as Editor.tsx
+    participant API as 后端 API
+    participant DB as SQLite
+
+    %% 保存页面为模板
+    U->>E: 编辑完页面，点击"另存为模板"
+    E->>E: 弹出命名表单（名称/描述/分类）
+    U->>E: 填写模板名称，点击确认
+    E->>API: POST /api/templates {name, content, category, description}
+    Note over E,API: content = 当前页面的 Puck Data
+    API->>DB: INSERT INTO templates (id, name, content, ...)
+    DB-->>API: template 记录
+    API-->>E: {template}
+    E-->>U: "模板已保存"
+
+    %% 从模板创建页面
+    U->>TL: 进入模板库，浏览模板
+    TL->>API: GET /api/templates?category=landing
+    API->>DB: SELECT * FROM templates WHERE category=?
+    DB-->>API: templates[]
+    API-->>TL: {data: templates}
+    TL->>TL: 卡片展示模板
+
+    U->>TL: 点击"从模板创建页面"
+    TL->>API: POST /api/templates/:id/apply
+    API->>DB: SELECT content FROM templates WHERE id=?
+    DB-->>API: template.content
+    API->>DB: INSERT INTO pages (id, title, content, ...)
+    Note over API,DB: 创建新 page + content = template.content
+    DB-->>API: new page
+    API-->>TL: {page}
+    TL->>E: 跳转 /editor?pageId=<new id>

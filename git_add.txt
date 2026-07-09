@@ -1,0 +1,37 @@
+﻿git.exe : warning: in the working copy of '.env.example', LF will be replaced by CRLF the next time Git touches it
+At line:439 char:76
++ ... Location $d; & "C:\Program Files\Git\bin\git.exe" add -A 2>&1 | Out-F ...
++                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+warning: in the working copy of '.github/workflows/deploy.yml', LF will be replaced by CRLF the next time Git touches 
+it
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Dockerfile', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docker-compose.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/class-diagram-v2.mermaid', LF will be replaced by CRLF the next time Git touches 
+it
+warning: in the working copy of 'docs/class-diagram-v3.mermaid', LF will be replaced by CRLF the next time Git touches 
+it
+warning: in the working copy of 'docs/class-diagram.mermaid', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/deployment.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/sequence-diagram-v2.mermaid', LF will be replaced by CRLF the next time Git 
+touches it
+warning: in the working copy of 'docs/sequence-diagram-v3.mermaid', LF will be replaced by CRLF the next time Git 
+touches it
+warning: in the working copy of 'docs/sequence-diagram.mermaid', LF will be replaced by CRLF the next time Git touches 
+it
+warning: in the working copy of 'docs/system_design.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/system_design_v2.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/system_design_v3.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/task-graph-v2.mermaid', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/user-manual.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'index.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nginx/nginx.conf', LF will be replaced by CRLF the next time Git touches it
+error: short read while indexing nul
+error: nul: failed to insert into database
+error: unable to index file 'nul'
+fatal: adding files failed

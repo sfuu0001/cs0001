@@ -1,0 +1,184 @@
+classDiagram
+    %% 一期已有模型
+    class Page {
+        +string id
+        +string title
+        +string slug
+        +string description
+        +object content    // Puck Data {root,content,zones?}
+        +"draft"|"published"|"archived" status
+        +number viewCount
+        +string createdAt
+        +string updatedAt
+        +string publishedAt
+        +string deletedAt
+        +object metadata
+        +string themeId    // NEW: 关联 Theme.id
+    }
+
+    class PageRow {
+        +TEXT id
+        +TEXT title
+        +TEXT slug UNIQUE
+        +TEXT description
+        +TEXT content          // JSON 文本
+        +TEXT status
+        +INTEGER view_count
+        +DATETIME created_at
+        +DATETIME updated_at
+        +DATETIME published_at
+        +DATETIME deleted_at
+        +TEXT metadata
+        +TEXT theme_id         // NEW: FK → themes.id
+    }
+
+    class PageRepository {
+        +list() PageRow[]
+        +getById(id) PageRow
+        +create(data) PageRow
+        +update(id, patch) PageRow
+        +softDelete(id) void
+        +restore(id) void
+        +duplicate(id) PageRow
+        +findBySlug(slug) PageRow
+        +incrementView(id) void
+    }
+
+    %% 二期新增模型 B: Theme
+    class Theme {
+        +string id
+        +string name
+        +string description
+        +ThemeVariables variables
+        +boolean isPreset
+        +string previewImage
+        +string createdAt
+        +string updatedAt
+    }
+
+    class ThemeVariables {
+        +string "--primary"
+        +string "--primary-foreground"
+        +string "--background"
+        +string "--foreground"
+        +string "--muted"
+        +string "--muted-foreground"
+        +string "--accent"
+        +string "--accent-foreground"
+        +string "--border"
+        +string "--input"
+        +string "--ring"
+        +string "--font-sans"
+        +string "--font-mono"
+        +string "--spacing-unit"
+        +string "--radius"
+        +string "--shadow-sm"
+        +string "--shadow-md"
+        +string "--shadow-lg"
+        +string "--transition"
+    }
+
+    class ThemeRepository {
+        +list({page,limit,search}) Theme[]
+        +getById(id) Theme
+        +create(data) Theme
+        +update(id, patch) Theme
+        +delete(id) boolean
+        +applyToPage(themeId, pageId) void
+        +getExportData(id) object
+    }
+
+    class ThemesApi {
+        +GET /api/themes
+        +POST /api/themes
+        +GET /api/themes/:id
+        +PUT /api/themes/:id
+        +DELETE /api/themes/:id
+        +POST /api/themes/import
+        +GET /api/themes/:id/export
+        +POST /api/themes/:id/apply
+    }
+
+    %% 二期新增模型 C: Media
+    class Media {
+        +string id
+        +string filename        // UUID 重命名后的文件名
+        +string originalName    // 用户原始文件名
+        +string path            // 服务器文件路径
+        +string url             // 公开访问 URL (/uploads/xxx.ext)
+        +string mimeType
+        +number size            // bytes
+        +number width
+        +number height
+        +string alt
+        +string[] tags
+        +string createdAt
+        +string uploadedBy
+    }
+
+    class MediaRepository {
+        +list({page,limit,search,mimeType}) Media[]
+        +getById(id) Media
+        +create(fileInfo) Media
+        +update(id, patch) Media
+        +delete(id) boolean
+        +batchCreate(files) Media[]
+    }
+
+    class MediaApi {
+        +GET /api/media
+        +POST /api/media         (multipart/form-data)
+        +PUT /api/media/:id
+        +DELETE /api/media/:id
+        +POST /api/media/batch   (multipart)
+    }
+
+    %% 二期新增模型 D: Template
+    class Template {
+        +string id
+        +string name
+        +string description
+        +object content          // Puck Data {root,content,zones?}
+        +string thumbnail
+        +string category         // "landing"|"about"|"contact"|"blog"|"gallery"
+        +boolean isPreset
+        +string createdAt
+        +string updatedAt
+    }
+
+    class TemplateRepository {
+        +list({page,limit,category}) Template[]
+        +getById(id) Template
+        +create(data) Template
+        +delete(id) boolean
+        +applyToPage(templateId, pageId) Page
+    }
+
+    class TemplatesApi {
+        +GET /api/templates
+        +POST /api/templates
+        +GET /api/templates/:id
+        +DELETE /api/templates/:id
+        +POST /api/templates/:id/apply
+    }
+
+    %% 关系
+    Page --> Theme : "themeId → id"
+    Theme ..> ThemeVariables : 组合(JSON)
+
+    ThemesApi --> ThemeRepository : 调用
+    ThemesApi ..> Page : 应用(update)
+
+    MediaApi --> MediaRepository : 调用
+    MediaApi ..> Media : 生成(file upload)
+
+    TemplatesApi --> TemplateRepository : 调用
+    TemplatesApi ..> Page : 应用(apply content)
+
+    PageRepository ..> PageRow : 持久化(snake_case)
+    PageRow --> "themes.id" : theme_id FK
+
+    %% 新增 Repository 与 DB 关系
+    ThemeRepository ..> "themes 表" : 持久化
+    MediaRepository ..> "media 表" : 持久化
+    TemplateRepository ..> "templates 表" : 持久化

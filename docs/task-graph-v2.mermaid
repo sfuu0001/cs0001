@@ -1,0 +1,22 @@
+%% 二期任务依赖图
+%% T02 与 T01 无依赖（可并行）；T03/T04 依赖 T01；T05 依赖全部前置
+graph TD
+    T01["T01<br/>项目基础设施 +<br/>后端数据层/API"]
+    T02["T02<br/>Puck 新组件<br/>(22个)"]
+    T03["T03<br/>前端主题系统 +<br/>媒体管理页面"]
+    T04["T04<br/>前端模板系统 +<br/>集成 + 路由"]
+    T05["T05<br/>预设种子数据 +<br/>构建验证"]
+
+    T01 --> T03
+    T01 --> T04
+    T03 --> T04
+    T01 --> T05
+    T02 --> T05
+    T03 --> T05
+    T04 --> T05
+
+    style T01 fill:#4A90D9,color:#fff
+    style T02 fill:#7B68EE,color:#fff
+    style T03 fill:#2E8B57,color:#fff
+    style T04 fill:#D2691E,color:#fff
+    style T05 fill:#8B0000,color:#fff

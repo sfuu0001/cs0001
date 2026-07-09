@@ -1,0 +1,35 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# SQLite 数据库文件（服务端持久化）
+server/data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+
+# 上传的媒体文件
+server/uploads/
+
+# Windows 保留文件名（避免误创建）
+nul
+NUL
+Nul
